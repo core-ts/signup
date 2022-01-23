@@ -1,11 +1,39 @@
 import * as util from 'util';
 
+export interface Phones {
+  [key: string]: string;
+}
 // tslint:disable-next-line:class-name
 export class resources {
   static phonecodes?: Phones;
   static email = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*(\.[a-zA-Z]{2,4})$/i;
   static phone = /^\d{5,14}$/;
   static password = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+  static isPhone(str: string|null|undefined): boolean {
+    if (!str || str.length === 0 || str === '+') {
+      return false;
+    }
+    if (str.charAt(0) !== '+') {
+      return resources.phone.test(str);
+    } else {
+      const phoneNumber = str.substring(1);
+      if (!resources.phonecodes) {
+        return resources.phone.test(phoneNumber);
+      } else {
+        if (resources.phone.test(phoneNumber)) {
+          for (let degit = 1; degit <= 3; degit++) {
+            const countryCode = phoneNumber.substr(0, degit);
+            if (countryCode in resources.phonecodes) {
+              return true;
+            }
+          }
+          return false;
+        } else {
+          return false;
+        }
+      }
+    }
+  }
 }
 export interface User {
   username: string;
@@ -94,15 +122,15 @@ export interface SignupConf {
   fields?: FieldConfig;
   url: string;
 }
-export interface MailTemplate {
+export interface Template {
   subject: string;
   body: string;
 }
-export interface SignupMailConf extends SignupConf {
-  email: MailTemplate;
+export interface SignupTemplateConfig extends SignupConf {
+  template: Template;
 }
-export interface SignupMailConfig {
-  email: MailTemplate;
+export interface SignupTemplateConf {
+  email: Template;
   user?: string;
   password?: string;
 }
@@ -314,41 +342,8 @@ export function padLeft(str: string, length: number, pad?: string) {
   }
   return str2;
 }
-export interface Phones {
-  [key: string]: string;
-}
-
-// tslint:disable-next-line:max-classes-per-file
-export class Tel {
-  static isPhone(str: string|null|undefined): boolean {
-    if (!str || str.length === 0 || str === '+') {
-      return false;
-    }
-    if (str.charAt(0) !== '+') {
-      return resources.phone.test(str);
-    } else {
-      const phoneNumber = str.substring(1);
-      if (!resources.phonecodes) {
-        return resources.phone.test(phoneNumber);
-      } else {
-        if (resources.phone.test(phoneNumber)) {
-          for (let degit = 1; degit <= 3; degit++) {
-            const countryCode = phoneNumber.substr(0, degit);
-            if (countryCode in resources.phonecodes) {
-              return true;
-            }
-          }
-          return false;
-        } else {
-          return false;
-        }
-      }
-    }
-  }
-}
-export const tel = Tel;
 export function isPhone(str: string|null|undefined): boolean {
-  return Tel.isPhone(str);
+  return resources.isPhone(str);
 }
 export function isEmail(email: string|null|undefined): boolean {
   if (!email || email.length === 0) {
