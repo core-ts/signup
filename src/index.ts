@@ -1,3 +1,5 @@
+import * as util from 'util';
+
 // tslint:disable-next-line:class-name
 export class resources {
   static phonecodes?: Phones;
@@ -90,18 +92,31 @@ export interface SignupConf {
   map?: StringMap;
   track?: Track;
   fields?: FieldConfig;
-  url?: string;
+  url: string;
+}
+export interface MailTemplate {
+  subject: string;
+  body: string;
+}
+export interface SignupMailConf extends SignupConf {
+  email: MailTemplate;
+}
+export interface SignupMailConfig {
+  email: MailTemplate;
+  user?: string;
+  password?: string;
 }
 export interface SignupConfig {
   user?: string;
   password?: string;
 }
-export interface SignUpConfirmationConfig {
+export interface SignupUrlConfig {
   expires: number;
   domain: string;
   port: number;
   secure: string;
 }
+export type SignupConfirmUrlConfig = SignupUrlConfig;
 export interface Repository<ID, T extends User> {
   checkUsername(username: string): Promise<boolean>;
   checkContact(contact: string): Promise<boolean>;
@@ -218,7 +233,7 @@ export class SignupService<ID, T extends User> {
       return false;
     }
 
-    const sent = await this.send('', codeSendToEmail, expiredAt, info.contact);
+    const sent = await this.send(info.contact, codeSendToEmail, expiredAt, userId);
     if (sent) {
       const ok = await this.repository.verify(userId);
       if (ok) {
@@ -259,16 +274,16 @@ export class SignupService<ID, T extends User> {
   }
 }
 export const UserRegistrationService = SignupService;
-export function addSeconds(date: Date, number: number) {
-  const newDate = new Date(date);
-  newDate.setSeconds(newDate.getSeconds() + number);
-  return newDate;
+export function addSeconds(date: Date, seconds: number) {
+  const d = new Date(date);
+  d.setSeconds(d.getSeconds() + seconds);
+  return d;
 }
-export function after(date1?: Date, date2?: Date): boolean {
-  if (!date1 || !date2) {
+export function after(d1?: Date, d2?: Date): boolean {
+  if (!d1 || !d2) {
     return false;
   }
-  if (date1.getTime() - date2.getTime() > 0) {
+  if (d1.getTime() - d2.getTime() > 0) {
     return true;
   }
   return false;
@@ -391,3 +406,49 @@ export class Validator<T extends User> {
 }
 export const SignupValidator = Validator;
 export const UserRegistrationValidator = Validator;
+export type EmailData = string|{ name?: string; email: string; };
+export interface MailContent {
+  type: string;
+  value: string;
+}
+export interface MailData {
+  to?: EmailData|EmailData[];
+
+  from: EmailData;
+  replyTo?: EmailData;
+
+  subject?: string;
+  html?: string;
+  content?: MailContent[];
+}
+
+// tslint:disable-next-line:max-classes-per-file
+export class MailSender {
+  constructor(
+    public url: string,
+    public sendMail: (mailData: MailData) => Promise<boolean>,
+    public from: EmailData,
+    public data: string,
+    public subject: string
+  ) {
+    this.send = this.send.bind(this);
+  }
+  send(to: string, passcode: string, expireAt: Date, params?: any): Promise<boolean> {
+    const confirmUrl = buildConfirmUrl(this.url, params as string, passcode);
+    const diff =  Math.abs(Math.round(((Date.now() - expireAt.getTime()) / 1000) / 60));
+    const body = util.format(this.data, ...[confirmUrl, confirmUrl, confirmUrl, diff, confirmUrl, confirmUrl, confirmUrl, diff]);
+    const msg = {
+      to,
+      from: this.from,
+      subject: this.subject,
+      html: body
+    };
+    return this.sendMail(msg);
+  }
+}
+export const EmailSender = MailSender;
+export const SignupSender = MailSender;
+export function buildConfirmUrl(url: string, userId: string, passcode: string): string {
+  // return `${this.config.secure ? 'https' : 'http'}://${this.config.domain}${port}/signup/verify/${userId}/${passcode}`;
+  return `${url}/${userId}/${passcode}`;
+}
