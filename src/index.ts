@@ -158,19 +158,19 @@ export class SignupService<ID, T extends User> {
     public passcodeComparator: Comparator,
     public passcodeRepository: PasscodeRepository<ID>,
     public send: (to: string, passcode: string, expireAt: Date, params?: any) => Promise<boolean>,
-    gen: () => string,
     public expires: number,
     public validate?: (model: User) => ErrorMessage[],
-    public checkContact?: (username: string) => Promise<boolean>
+    public checkContact?: (username: string) => Promise<boolean>,
+    gen?: () => string,
   ) {
-    this.generate = gen;
+    this.generate = (gen ? gen : generate);
     this.register = this.register.bind(this);
     this.signup = this.signup.bind(this);
     this.verify = this.verify.bind(this);
     this.check = this.check.bind(this);
     this.createConfirmCode = this.createConfirmCode.bind(this);
   }
-  public generate: () => string;
+  generate: () => string;
   register(info: T): Promise<Result|string|number> {
     return this.signup(info);
   }
@@ -246,7 +246,7 @@ export class SignupService<ID, T extends User> {
     }
   }
 
-  verify(userId: ID, code: string, password: string): Promise<boolean> {
+  verify(userId: ID, code: string, password?: string): Promise<boolean> {
     return this.check(userId, code).then(valid => {
       if (!valid) {
         return false;
