@@ -8,7 +8,7 @@ export class resources {
   static phonecodes?: Phones;
   static email = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*(\.[a-zA-Z]{2,4})$/i;
   static phone = /^\d{5,14}$/;
-  static password = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
+  static password = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})/;
   static isPhone(str: string|null|undefined): boolean {
     if (!str || str.length === 0 || str === '+') {
       return false;
