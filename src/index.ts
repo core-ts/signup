@@ -96,6 +96,7 @@ export interface UserStatus {
   activated: string;
 }
 export interface FieldConfig {
+  id?: string;
   username?: string;
   contact?: string;
   password?: string;
@@ -446,4 +447,239 @@ export const SignupSender = MailSender;
 export function buildConfirmUrl(url: string, userId: string, passcode: string): string {
   // return `${this.config.secure ? 'https' : 'http'}://${this.config.domain}${port}/signup/verify/${userId}/${passcode}`;
   return `${url}/${userId}/${passcode}`;
+}
+export interface DB {
+  param(i: number): string;
+  exec(sql: string, args?: any[], ctx?: any): Promise<number>;
+  execBatch(statements: Statement[], firstSuccess?: boolean, ctx?: any): Promise<number>;
+  query<T>(sql: string, args?: any[], m?: StringMap): Promise<T[]>;
+}
+export interface Statement {
+  query: string;
+  params?: any[];
+}
+export function useRepository<ID, T extends User>(db: DB, user: string, authen: string, conf: UserStatus, c?: FieldConfig, maxPasswordAge?: number, track?: Track, mp?: StringMap): SqlRepository<ID, T> {
+  if (c) {
+    return new SqlRepository(db, user, authen, conf, c.id, c.contact, c.username, c.status, c.password, maxPasswordAge, c.maxPasswordAge, track, mp);
+  } else {
+    return new SqlRepository(db, user, authen, conf, undefined, undefined, undefined, undefined, undefined, maxPasswordAge, undefined, track, mp);
+  }
+}
+export const useService = useRepository;
+export const useSignupService = useRepository;
+export const useSignupRepository = useRepository;
+export const useSignup = useRepository;
+export const useUserRegistrationService = useRepository;
+export const useUserRegistrationRepository = useRepository;
+export const useUserRegistration = useRepository;
+export class SqlRepository<ID, T extends User> {
+  constructor(public db: DB, public user: string, public authen: string, public conf: UserStatus, id?: string, contact?: string, username?: string, status?: string, password?: string, public maxPasswordAge?: number, public maxPasswordAgeField?: string, public track?: Track, mp?: StringMap) {
+    this.id = (id ? id : 'id');
+    this.username = (username ? username : 'username');
+    this.contact = (contact ? contact : 'email');
+    this.password = (password ? password : 'password');
+    this.status = (status ? status : 'status');
+    this.map = mp;
+    this.checkUsername = this.checkUsername.bind(this);
+    this.checkContact = this.checkContact.bind(this);
+    this.save = this.save.bind(this);
+    this.verify = this.verify.bind(this);
+    this.activate = this.activate.bind(this);
+  }
+  map?: StringMap;
+  id: string;
+  username: string;
+  contact: string;
+  password: string;
+  status: string;
+  checkUsername(username: string): Promise<boolean> {
+    const query = `select ${this.username} from ${this.user} where ${this.username} = ${this.db.param(1)}`;
+    return this.db.query(query, [username]).then(users => users && users.length > 0 ? true : false);
+  }
+  checkContact(contact: string): Promise<boolean> {
+    const query = `select ${this.contact} from ${this.user} where ${this.contact} = ${this.db.param(1)}`;
+    return this.db.query(query, [contact]).then(users => users && users.length > 0 ? true : false);
+  }
+  save(id: ID, info: T): Promise<boolean> {
+    let user: any = {};
+    if (this.map) {
+      const c: any = clone(info);
+      delete c['username'];
+      delete c['contact'];
+      delete c['password'];
+      delete c['status'];
+      user = map(c, this.map);
+      user[this.status] = this.conf.registered;
+      user[this.id] = id;
+    }
+    user[this.username] = info.username;
+    user[this.contact] = info.contact;
+    user[this.status] = this.conf.registered;
+    user[this.id] = id;
+    if (this.track) {
+      const now = new Date();
+      user[this.track.createdBy] = id;
+      user[this.track.createdAt] = now;
+      user[this.track.updatedBy] = id;
+      user[this.track.updatedAt] = now;
+      if (this.track.version && this.track.version.length > 0) {
+        user[this.track.version] = 1;
+      }
+    }
+    if (this.maxPasswordAge && this.maxPasswordAge > 0 && this.maxPasswordAgeField && this.maxPasswordAgeField.length > 0) {
+      user[this.maxPasswordAgeField] = this.maxPasswordAge;
+    }
+    if (!info.password || info.password.length === 0) {
+      let u2: any = user;
+      if (this.map) {
+        u2 = map(user, this.map);
+      }
+      const stmt = buildStatement(u2, this.user, this.db.param);
+      return this.db.exec(stmt.query, stmt.params).then(c => c > 0 ? true : false);
+    } else {
+      if (this.user === this.authen) {
+        user[this.password] = info.password;
+        let u2: any = user;
+        if (this.map) {
+          u2 = map(user, this.map);
+        }
+        const stmt = buildStatement(u2, this.user, this.db.param);
+        return this.db.exec(stmt.query, stmt.params).then(c => c > 0 ? true : false);
+      } else {
+        const p: any = {
+          [this.id]: id,
+          [this.password]: info.password
+        };
+        let u2: any = user;
+        let p2: any = p;
+        if (this.map) {
+          u2 = map(user, this.map);
+          p2 = map(p, this.map);
+        }
+        const stmt1 = buildStatement(u2, this.user, this.db.param);
+        const stmt2 = buildStatement(p2, this.authen, this.db.param);
+        return this.db.execBatch([stmt1, stmt2], true).then(c => c > 0 ? true : false);
+      }
+    }
+  }
+  verify(id: ID): Promise<boolean> {
+    if (this.conf.registered === this.conf.codeSent) {
+      return Promise.resolve(true);
+    } else {
+      const version = (this.track && this.track.version && this.track.version.length > 0 ? this.track.version : undefined);
+      const ver = (version && version.length > 0 ? 2 : undefined);
+      const stmt = buildStatusUpdate(this.user, this.db.param, this.id, id, this.status, this.conf.registered, this.conf.codeSent, version, ver);
+      return this.db.exec(stmt.query, stmt.params).then(c => c > 0 ? true : false);
+    }
+  }
+  activate(id: ID, password?: string): Promise<boolean> {
+    const version = (this.track && this.track.version && this.track.version.length > 0 ? this.track.version : undefined);
+    const ver = (version && version.length > 0 ? (this.conf.registered === this.conf.codeSent ? 2 : 3) : undefined);
+    if (!password || password.length === 0) {
+      const stmt = buildStatusUpdate(this.user, this.db.param, this.id, id, this.status, this.conf.codeSent, this.conf.activated, version, ver);
+      return this.db.exec(stmt.query, stmt.params).then(c => c > 0 ? true : false );
+    } else {
+      const p: any = {
+        [this.password]: password
+      };
+      if (this.user === this.authen) {
+        p[this.status] = this.conf.activated;
+        let p2 = p;
+        if (this.map) {
+          p2 = map(p, this.map);
+        }
+        const stmt = buildUpdate(p2, this.db.param);
+        const query = `update ${this.user} set ${stmt.query} where ${this.id} = ${this.db.param(3)} and ${this.status} = ${this.db.param(4)}`;
+        const params: any[] = [];
+        if (stmt.params && stmt.params.length > 0) {
+          for (const pr of stmt.params) {
+            params.push(pr);
+          }
+        }
+        params.push(id);
+        params.push(this.conf.codeSent);
+        return this.db.exec(query, params).then(c => c > 0 ? true : false);
+      } else {
+        p[this.id] = id;
+        let p2 = p;
+        if (this.map) {
+          p2 = map(p, this.map);
+        }
+        const stmt1 = buildStatement(p2, this.authen, this.db.param);
+        const stmt2 = buildStatusUpdate(this.user, this.db.param, this.id, id, this.status, this.conf.codeSent, this.conf.activated, version, ver);
+        return this.db.execBatch([stmt1, stmt2], true).then(c => c > 0 ? true : false);
+      }
+    }
+  }
+}
+export function buildUpdate<T>(obj: T, buildParam: (i: number) => string): Statement {
+  const keys = Object.keys(obj);
+  const cols: string[] = [];
+  const params: any[] = [];
+  const o: any = obj;
+  let i = 1;
+  for (const key of keys) {
+    const v = o[key];
+    if (v != null) {
+      cols.push(`${key} = ${buildParam(i++)}`);
+      params.push(v);
+    }
+  }
+  const query = cols.join(',');
+  return { query, params};
+}
+export function buildStatement<T>(obj: T, table: string, buildParam: (i: number) => string): Statement {
+  const keys = Object.keys(obj);
+  const cols: string[] = [];
+  const values: string[] = [];
+  const params: any[] = [];
+  const o: any = obj;
+  let i = 1;
+  for (const key of keys) {
+    const v = o[key];
+    if (v != null) {
+      cols.push(key);
+      values.push(buildParam(i++));
+      params.push(v);
+    }
+  }
+  const query = `insert into ${table}(${cols.join(',')})values(${values.join(',')})`;
+  return { query, params};
+}
+export function buildStatusUpdate<ID>(table: string, buildParam: (i: number) => string, idname: string, id: ID, status: string, from: string, to: string, version?: string, ver?: number): Statement {
+  const sv = (version && ver !== undefined && ver > 0 ? `, version = ${ver} ` : '');
+  const query = `update ${table} set status = ${buildParam(1)} ${sv} where ${idname} = ${buildParam(2)} and ${status} = ${buildParam(3)}`;
+  return {query, params: [to, id, from]};
+}
+export const SqlSignupRepository = SqlRepository;
+export const SignupRepository = SqlRepository;
+export const SqlSignupService = SqlRepository;
+export const UserRegistrationRepository = SqlRepository;
+export const SqlUserRegistrationRepository = SqlRepository;
+export function clone<T>(obj: T): T {
+  const obj2: any = {};
+  const keys = Object.keys(obj);
+  for (const key of keys) {
+    obj2[key] = (obj as any)[key];
+  }
+  return obj2;
+}
+export function map<T>(obj: T, m?: StringMap): any {
+  if (!m) {
+    return obj;
+  }
+  const mkeys = Object.keys(m);
+  if (mkeys.length === 0) {
+    return obj;
+  }
+  const obj2: any = {};
+  const keys = Object.keys(obj);
+  for (const key of keys) {
+    let k0 = m[key];
+    if (!k0) {
+      k0 = key;
+    }
+    obj2[k0] = (obj as any)[key];
+  }
+  return obj2;
 }
