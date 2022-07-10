@@ -469,9 +469,11 @@ export const useService = useRepository;
 export const useSignupService = useRepository;
 export const useSignupRepository = useRepository;
 export const useSignup = useRepository;
+export const useUserRepository = useRepository;
 export const useUserRegistrationService = useRepository;
 export const useUserRegistrationRepository = useRepository;
 export const useUserRegistration = useRepository;
+// tslint:disable-next-line:max-classes-per-file
 export class SqlRepository<ID, T extends User> {
   constructor(public db: DB, public user: string, public authen: string, public conf: UserStatus, id?: string, contact?: string, username?: string, status?: string, password?: string, public maxPasswordAge?: number, public maxPasswordAgeField?: string, public track?: Track, mp?: StringMap) {
     this.id = (id ? id : 'id');
@@ -656,6 +658,8 @@ export const SignupRepository = SqlRepository;
 export const SqlSignupService = SqlRepository;
 export const UserRegistrationRepository = SqlRepository;
 export const SqlUserRegistrationRepository = SqlRepository;
+export const UserRepository = SqlRepository;
+export const SqlUserRepository = SqlRepository;
 export function clone<T>(obj: T): T {
   const obj2: any = {};
   const keys = Object.keys(obj);
