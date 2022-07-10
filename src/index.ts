@@ -163,7 +163,7 @@ export interface Passcode {
 }
 export interface PasscodeRepository<ID> {
   save(id: ID, passcode: string, expireAt: Date): Promise<number>;
-  load(id: ID): Promise<Passcode>;
+  load(id: ID): Promise<Passcode|null|undefined>;
   delete(id: ID): Promise<number>;
 }
 /*
@@ -294,10 +294,14 @@ export class SignupService<ID, T extends User> {
   }
   private check(userId: ID, code: string): Promise<boolean> {
     return this.passcodeRepository.load(userId).then(pass => {
-      if (after(new Date, pass.expiredAt)) {
-        return false;
+      if (pass) {
+        if (after(new Date, pass.expiredAt)) {
+          return false;
+        } else {
+          return this.passcodeComparator.compare(code, pass.code);
+        }
       } else {
-        return this.passcodeComparator.compare(code, pass.code);
+        return Promise.resolve(false);
       }
     });
   }
