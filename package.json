@@ -1,6 +1,6 @@
 {
   "name": "signup-service",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "signup",
   "main": "./lib/index.js",
   "types": "./src/index.ts",

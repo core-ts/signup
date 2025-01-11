@@ -619,7 +619,7 @@ export class SqlRepository<ID, T extends User> {
   }
 }
 export function buildUpdate<T>(obj: T, buildParam: (i: number) => string): Statement {
-  const keys = Object.keys(obj);
+  const keys = Object.keys(obj as any);
   const cols: string[] = [];
   const params: any[] = [];
   const o: any = obj;
@@ -635,7 +635,7 @@ export function buildUpdate<T>(obj: T, buildParam: (i: number) => string): State
   return { query, params};
 }
 export function buildStatement<T>(obj: T, table: string, buildParam: (i: number) => string): Statement {
-  const keys = Object.keys(obj);
+  const keys = Object.keys(obj as any);
   const cols: string[] = [];
   const values: string[] = [];
   const params: any[] = [];
@@ -666,7 +666,7 @@ export const UserRepository = SqlRepository;
 export const SqlUserRepository = SqlRepository;
 export function clone<T>(obj: T): T {
   const obj2: any = {};
-  const keys = Object.keys(obj);
+  const keys = Object.keys(obj as any);
   for (const key of keys) {
     obj2[key] = (obj as any)[key];
   }
@@ -681,7 +681,7 @@ export function map<T>(obj: T, m?: StringMap): any {
     return obj;
   }
   const obj2: any = {};
-  const keys = Object.keys(obj);
+  const keys = Object.keys(obj as any);
   for (const key of keys) {
     let k0 = m[key];
     if (!k0) {
