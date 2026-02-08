@@ -454,8 +454,8 @@ export function buildConfirmUrl(url: string, userId: string, passcode: string): 
 }
 export interface DB {
   param(i: number): string;
-  exec(sql: string, args?: any[], ctx?: any): Promise<number>;
-  execBatch(statements: Statement[], firstSuccess?: boolean, ctx?: any): Promise<number>;
+  execute(sql: string, args?: any[], ctx?: any): Promise<number>;
+  executeBatch(statements: Statement[], firstSuccess?: boolean, ctx?: any): Promise<number>;
   query<T>(sql: string, args?: any[], m?: StringMap): Promise<T[]>;
 }
 export interface Statement {
@@ -541,7 +541,7 @@ export class SqlRepository<ID, T extends User> {
         u2 = map(user, this.map);
       }
       const stmt = buildStatement(u2, this.user, this.db.param);
-      return this.db.exec(stmt.query, stmt.params).then(c => c > 0 ? true : false);
+      return this.db.execute(stmt.query, stmt.params).then(c => c > 0 ? true : false);
     } else {
       if (this.user === this.authen) {
         user[this.password] = info.password;
@@ -550,7 +550,7 @@ export class SqlRepository<ID, T extends User> {
           u2 = map(user, this.map);
         }
         const stmt = buildStatement(u2, this.user, this.db.param);
-        return this.db.exec(stmt.query, stmt.params).then(c => c > 0 ? true : false);
+        return this.db.execute(stmt.query, stmt.params).then(c => c > 0 ? true : false);
       } else {
         const p: any = {
           [this.id]: id,
@@ -564,7 +564,7 @@ export class SqlRepository<ID, T extends User> {
         }
         const stmt1 = buildStatement(u2, this.user, this.db.param);
         const stmt2 = buildStatement(p2, this.authen, this.db.param);
-        return this.db.execBatch([stmt1, stmt2], true).then(c => c > 0 ? true : false);
+        return this.db.executeBatch([stmt1, stmt2], true).then(c => c > 0 ? true : false);
       }
     }
   }
@@ -575,7 +575,7 @@ export class SqlRepository<ID, T extends User> {
       const version = (this.track && this.track.version && this.track.version.length > 0 ? this.track.version : undefined);
       const ver = (version && version.length > 0 ? 2 : undefined);
       const stmt = buildStatusUpdate(this.user, this.db.param, this.id, id, this.status, this.conf.registered, this.conf.codeSent, version, ver);
-      return this.db.exec(stmt.query, stmt.params).then(c => c > 0 ? true : false);
+      return this.db.execute(stmt.query, stmt.params).then(c => c > 0 ? true : false);
     }
   }
   activate(id: ID, password?: string): Promise<boolean> {
@@ -583,7 +583,7 @@ export class SqlRepository<ID, T extends User> {
     const ver = (version && version.length > 0 ? (this.conf.registered === this.conf.codeSent ? 2 : 3) : undefined);
     if (!password || password.length === 0) {
       const stmt = buildStatusUpdate(this.user, this.db.param, this.id, id, this.status, this.conf.codeSent, this.conf.activated, version, ver);
-      return this.db.exec(stmt.query, stmt.params).then(c => c > 0 ? true : false );
+      return this.db.execute(stmt.query, stmt.params).then(c => c > 0 ? true : false );
     } else {
       const p: any = {
         [this.password]: password
@@ -604,7 +604,7 @@ export class SqlRepository<ID, T extends User> {
         }
         params.push(id);
         params.push(this.conf.codeSent);
-        return this.db.exec(query, params).then(c => c > 0 ? true : false);
+        return this.db.execute(query, params).then(c => c > 0 ? true : false);
       } else {
         p[this.id] = id;
         let p2 = p;
@@ -613,7 +613,7 @@ export class SqlRepository<ID, T extends User> {
         }
         const stmt1 = buildStatement(p2, this.authen, this.db.param);
         const stmt2 = buildStatusUpdate(this.user, this.db.param, this.id, id, this.status, this.conf.codeSent, this.conf.activated, version, ver);
-        return this.db.execBatch([stmt1, stmt2], true).then(c => c > 0 ? true : false);
+        return this.db.executeBatch([stmt1, stmt2], true).then(c => c > 0 ? true : false);
       }
     }
   }
