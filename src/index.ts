@@ -1,4 +1,5 @@
-import * as util from 'util';
+import { randomInt } from "crypto";
+import * as util from "util";
 
 export interface Phones {
   [key: string]: string;
@@ -6,14 +7,14 @@ export interface Phones {
 // tslint:disable-next-line:class-name
 export class resources {
   static phonecodes?: Phones;
-  static email = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*(\.[a-zA-Z]{2,4})$/i;
+  static email = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/;
   static phone = /^\d{5,14}$/;
-  static password = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})/;
-  static isPhone(str: string|null|undefined): boolean {
-    if (!str || str.length === 0 || str === '+') {
+  static password = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+  static isPhone(str: string | null | undefined): boolean {
+    if (!str || str.length === 0 || str === "+") {
       return false;
     }
-    if (str.charAt(0) !== '+') {
+    if (str.charAt(0) !== "+") {
       return resources.phone.test(str);
     } else {
       const phoneNumber = str.substring(1);
@@ -57,36 +58,36 @@ export interface ErrorMessage {
   message?: string;
 }
 export interface Result {
-  status: number|string;
+  status: number | string;
   errors?: ErrorMessage[];
   message?: string;
 }
 export interface Status {
-  success: string|number;
-  username: string|number;
-  contact: string|number;
-  error: string|number;
-  format_username: string|number;
-  format_contact: string|number;
-  format_password: string|number;
+  success: string | number;
+  username: string | number;
+  contact: string | number;
+  error: string | number;
+  format_username: string | number;
+  format_contact: string | number;
+  format_password: string | number;
 }
 export interface StatusConf {
-  error?: string|number;
-  success?: string|number;
-  username?: string|number;
-  contact?: string|number;
-  format_username: string|number;
-  format_contact: string|number;
-  format_password: string|number;
+  error?: string | number;
+  success?: string | number;
+  username?: string | number;
+  contact?: string | number;
+  format_username: string | number;
+  format_contact: string | number;
+  format_password: string | number;
 }
 export function initStatus(s?: StatusConf): Status {
-  const error: number | string = (s && s.error ? s.error : 0);
-  const success: number | string = (s && s.success ? s.success : 1);
-  const username: number | string = (s && s.username ? s.username : 2);
-  const contact: number | string = (s && s.contact ? s.contact : 2);
-  const format_username: number | string = (s && s.format_username ? s.format_username : -1);
-  const format_contact: number | string = (s && s.format_contact ? s.format_contact : -2);
-  const format_password: number | string = (s && s.format_password ? s.format_password : -3);
+  const error: number | string = s && s.error ? s.error : 0;
+  const success: number | string = s && s.success ? s.success : 1;
+  const username: number | string = s && s.username ? s.username : 2;
+  const contact: number | string = s && s.contact ? s.contact : 2;
+  const format_username: number | string = s && s.format_username ? s.format_username : -1;
+  const format_contact: number | string = s && s.format_contact ? s.format_contact : -2;
+  const format_password: number | string = s && s.format_password ? s.format_password : -3;
   return { error, success, username, contact, format_username, format_contact, format_password };
 }
 export const initializeStatus = initStatus;
@@ -163,7 +164,7 @@ export interface Passcode {
 }
 export interface PasscodeRepository<ID> {
   save(id: ID, passcode: string, expireAt: Date): Promise<number>;
-  load(id: ID): Promise<Passcode|null|undefined>;
+  load(id: ID): Promise<Passcode | null | undefined>;
   delete(id: ID): Promise<number>;
 }
 /*
@@ -192,7 +193,7 @@ export class SignupService<ID, T extends User> {
     public checkContact?: (username: string) => Promise<boolean>,
     gen?: () => string,
   ) {
-    this.generate = (gen ? gen : generate);
+    this.generate = gen ? gen : generate;
     this.register = this.register.bind(this);
     this.signup = this.signup.bind(this);
     this.verify = this.verify.bind(this);
@@ -200,24 +201,24 @@ export class SignupService<ID, T extends User> {
     this.createConfirmCode = this.createConfirmCode.bind(this);
   }
   generate: () => string;
-  register(info: T): Promise<Result|string|number> {
+  register(info: T): Promise<Result | string | number> {
     return this.signup(info);
   }
-  async signup(info: T): Promise<Result|string|number> {
+  async signup(info: T): Promise<Result | string | number> {
     if (this.validate) {
       const errors = this.validate(info);
       if (errors && errors.length > 0) {
         let out = false;
         for (const err of errors) {
           const f = err.field;
-          if (f !== 'username' && f !== 'contact' && f !== 'password') {
+          if (f !== "username" && f !== "contact" && f !== "password") {
             out = true;
           } else {
-            if (f === 'username') {
+            if (f === "username") {
               return this.status.format_username;
-            } else if (f === 'contact') {
+            } else if (f === "contact") {
               return this.status.format_contact;
-            } else if (f === 'password') {
+            } else if (f === "password") {
               return this.status.format_password;
             }
           }
@@ -276,7 +277,7 @@ export class SignupService<ID, T extends User> {
   }
 
   verify(userId: ID, code: string, password?: string): Promise<boolean> {
-    return this.check(userId, code).then(valid => {
+    return this.check(userId, code).then((valid) => {
       if (!valid) {
         return false;
       } else {
@@ -284,7 +285,7 @@ export class SignupService<ID, T extends User> {
           this.passcodeRepository.delete(userId);
           return this.repository.activate(userId);
         } else {
-          return this.comparator.hash(password).then(hashPassword => {
+          return this.comparator.hash(password).then((hashPassword) => {
             this.passcodeRepository.delete(userId);
             return this.repository.activate(userId, hashPassword);
           });
@@ -293,9 +294,9 @@ export class SignupService<ID, T extends User> {
     });
   }
   private check(userId: ID, code: string): Promise<boolean> {
-    return this.passcodeRepository.load(userId).then(pass => {
+    return this.passcodeRepository.load(userId).then((pass) => {
       if (pass) {
-        if (after(new Date, pass.expiredAt)) {
+        if (after(new Date(), pass.expiredAt)) {
           return false;
         } else {
           return this.passcodeComparator.compare(code, pass.code);
@@ -322,24 +323,22 @@ export function after(d1?: Date, d2?: Date): boolean {
   return false;
 }
 
-export function generate(length?: number, pad?: string): string {
-  if (!length) {
-    length = 6;
-  }
-  return padLeft(Math.floor(Math.random() * Math.floor(Math.pow(10, length) - 1)).toString(), length, pad);
+export function generate(): string {
+  const n = randomInt(1, 999999);
+  return padLeft(n.toString(), 6, "0");
 }
-export function padLeft(str: string, length: number, pad?: string) {
+export function padLeft(str: string, length: number, pad?: string): string {
   if (!str) {
     return str;
   }
-  if (typeof str !== 'string') {
-    str = '' + str;
+  if (typeof str !== "string") {
+    str = "" + str;
   }
   if (str.length >= length) {
     return str;
   }
   if (!pad) {
-    pad = '0';
+    pad = "0";
   }
   let str2 = str;
   while (str2.length < length) {
@@ -347,58 +346,67 @@ export function padLeft(str: string, length: number, pad?: string) {
   }
   return str2;
 }
-export function isPhone(str: string|null|undefined): boolean {
+export function isPhone(str: string | null | undefined): boolean {
   return resources.isPhone(str);
 }
-export function isEmail(email: string|null|undefined): boolean {
+export function isEmail(email: string | null | undefined): boolean {
   if (!email || email.length === 0) {
     return false;
   }
-  return resources.email.test(email);
+  const regex = new RegExp(resources.email);
+  return regex.test(email);
 }
-export function isUsername(u: string|null|undefined): boolean {
+export function isUsername(u: string | null | undefined): boolean {
   if (isEmail(u)) {
     return true;
   }
   if (isPhone(u)) {
     return true;
   }
-  const v = u + '@gmail.com';
+  const v = u + "@gmail.com";
   return isEmail(v);
 }
-export function isPassword(password: string): boolean {
-  return resources.password.test(password);
+export function isPassword(password: string, minLength = 8): boolean {
+  const regex = new RegExp(resources.password);
+
+  return regex.test(password);
 }
 // tslint:disable-next-line:max-classes-per-file
 export class Validator<T extends User> {
   min: number;
   passwordRequired: boolean;
-  checkContact: (u: string|null|undefined) => boolean;
-  checkUsername: (u: string|null|undefined) => boolean;
-  constructor(checkUsername?: (u: string|null|undefined) => boolean, checkContact?: (u: string|null|undefined) => boolean, passwordRequired?: boolean, min?: number, public max?: number) {
-    this.min = (min !== undefined && min != null ? min : 6);
-    this.passwordRequired = (passwordRequired !== undefined && passwordRequired != null ? passwordRequired : true);
-    this.checkUsername = (checkUsername ? checkUsername : isUsername);
-    this.checkContact = (checkContact ? checkContact : isEmail);
+  checkContact: (u: string | null | undefined) => boolean;
+  checkUsername: (u: string | null | undefined) => boolean;
+  constructor(
+    checkUsername?: (u: string | null | undefined) => boolean,
+    checkContact?: (u: string | null | undefined) => boolean,
+    passwordRequired?: boolean,
+    min?: number,
+    public max?: number,
+  ) {
+    this.min = min !== undefined && min != null ? min : 6;
+    this.passwordRequired = passwordRequired !== undefined && passwordRequired != null ? passwordRequired : true;
+    this.checkUsername = checkUsername ? checkUsername : isUsername;
+    this.checkContact = checkContact ? checkContact : isEmail;
     this.validate = this.validate.bind(this);
   }
   validate(u: T): ErrorMessage[] {
     const errs: ErrorMessage[] = [];
     if (!this.checkUsername(u.username)) {
-      errs.push({field: 'username', code: 'username', message: 'username is not valid'});
+      errs.push({ field: "username", code: "username", message: "username is not valid" });
     } else {
       if (u.username.length < this.min) {
-        errs.push({field: 'username', code: 'username', message: 'username must have at least ' + this.min + 'characters'});
+        errs.push({ field: "username", code: "username", message: "username must have at least " + this.min + "characters" });
       } else if (this.max && u.username.length > this.max) {
-        errs.push({field: 'username', code: 'username', message: 'username must be less than ' + this.max + 'characters'});
+        errs.push({ field: "username", code: "username", message: "username must be less than " + this.max + "characters" });
       }
     }
     if (!this.checkContact(u.contact)) {
-      errs.push({field: 'contact', code: 'contact', message: 'contact is not valid'});
+      errs.push({ field: "contact", code: "contact", message: "contact is not valid" });
     }
     if (this.passwordRequired) {
       if (!isPassword(u.password)) {
-        errs.push({field: 'password', code: 'password', message: 'password is not valid'});
+        errs.push({ field: "password", code: "password", message: "password is not valid" });
       }
     }
     return errs;
@@ -406,13 +414,13 @@ export class Validator<T extends User> {
 }
 export const SignupValidator = Validator;
 export const UserRegistrationValidator = Validator;
-export type EmailData = string|{ name?: string; email: string; };
+export type EmailData = string | { name?: string; email: string };
 export interface MailContent {
   type: string;
   value: string;
 }
 export interface MailData {
-  to?: EmailData|EmailData[];
+  to?: EmailData | EmailData[];
 
   from: EmailData;
   replyTo?: EmailData;
@@ -429,19 +437,19 @@ export class MailSender {
     public sendMail: (mailData: MailData) => Promise<boolean>,
     public from: EmailData,
     public data: string,
-    public subject: string
+    public subject: string,
   ) {
     this.send = this.send.bind(this);
   }
   send(to: string, passcode: string, expireAt: Date, params?: any): Promise<boolean> {
     const confirmUrl = buildConfirmUrl(this.url, params as string, passcode);
-    const diff =  Math.abs(Math.round(((Date.now() - expireAt.getTime()) / 1000) / 60));
+    const diff = Math.abs(Math.round((Date.now() - expireAt.getTime()) / 1000 / 60));
     const body = util.format(this.data, ...[confirmUrl, confirmUrl, confirmUrl, diff, confirmUrl, confirmUrl, confirmUrl, diff]);
     const msg = {
       to,
       from: this.from,
       subject: this.subject,
-      html: body
+      html: body,
     };
     return this.sendMail(msg);
   }
@@ -479,12 +487,26 @@ export const useUserRegistrationRepository = useRepository;
 export const useUserRegistration = useRepository;
 // tslint:disable-next-line:max-classes-per-file
 export class SqlRepository<ID, T extends User> {
-  constructor(public db: DB, public user: string, public authen: string, public conf: UserStatus, id?: string, contact?: string, username?: string, status?: string, password?: string, public maxPasswordAge?: number, public maxPasswordAgeField?: string, public track?: Track, mp?: StringMap) {
-    this.id = (id ? id : 'id');
-    this.username = (username ? username : 'username');
-    this.contact = (contact ? contact : 'email');
-    this.password = (password ? password : 'password');
-    this.status = (status ? status : 'status');
+  constructor(
+    public db: DB,
+    public user: string,
+    public authen: string,
+    public conf: UserStatus,
+    id?: string,
+    contact?: string,
+    username?: string,
+    status?: string,
+    password?: string,
+    public maxPasswordAge?: number,
+    public maxPasswordAgeField?: string,
+    public track?: Track,
+    mp?: StringMap,
+  ) {
+    this.id = id ? id : "id";
+    this.username = username ? username : "username";
+    this.contact = contact ? contact : "email";
+    this.password = password ? password : "password";
+    this.status = status ? status : "status";
     this.map = mp;
     this.checkUsername = this.checkUsername.bind(this);
     this.checkContact = this.checkContact.bind(this);
@@ -500,20 +522,20 @@ export class SqlRepository<ID, T extends User> {
   status: string;
   checkUsername(username: string): Promise<boolean> {
     const query = `select ${this.username} from ${this.user} where ${this.username} = ${this.db.param(1)}`;
-    return this.db.query(query, [username]).then(users => users && users.length > 0 ? true : false);
+    return this.db.query(query, [username]).then((users) => (users && users.length > 0 ? true : false));
   }
   checkContact(contact: string): Promise<boolean> {
     const query = `select ${this.contact} from ${this.user} where ${this.contact} = ${this.db.param(1)}`;
-    return this.db.query(query, [contact]).then(users => users && users.length > 0 ? true : false);
+    return this.db.query(query, [contact]).then((users) => (users && users.length > 0 ? true : false));
   }
   save(id: ID, info: T): Promise<boolean> {
     let user: any = {};
     if (this.map) {
       const c: any = clone(info);
-      delete c['username'];
-      delete c['contact'];
-      delete c['password'];
-      delete c['status'];
+      delete c["username"];
+      delete c["contact"];
+      delete c["password"];
+      delete c["status"];
       user = map(c, this.map);
       user[this.status] = this.conf.registered;
       user[this.id] = id;
@@ -541,7 +563,7 @@ export class SqlRepository<ID, T extends User> {
         u2 = map(user, this.map);
       }
       const stmt = buildStatement(u2, this.user, this.db.param);
-      return this.db.execute(stmt.query, stmt.params).then(c => c > 0 ? true : false);
+      return this.db.execute(stmt.query, stmt.params).then((c) => (c > 0 ? true : false));
     } else {
       if (this.user === this.authen) {
         user[this.password] = info.password;
@@ -550,11 +572,11 @@ export class SqlRepository<ID, T extends User> {
           u2 = map(user, this.map);
         }
         const stmt = buildStatement(u2, this.user, this.db.param);
-        return this.db.execute(stmt.query, stmt.params).then(c => c > 0 ? true : false);
+        return this.db.execute(stmt.query, stmt.params).then((c) => (c > 0 ? true : false));
       } else {
         const p: any = {
           [this.id]: id,
-          [this.password]: info.password
+          [this.password]: info.password,
         };
         let u2: any = user;
         let p2: any = p;
@@ -564,7 +586,7 @@ export class SqlRepository<ID, T extends User> {
         }
         const stmt1 = buildStatement(u2, this.user, this.db.param);
         const stmt2 = buildStatement(p2, this.authen, this.db.param);
-        return this.db.executeBatch([stmt1, stmt2], true).then(c => c > 0 ? true : false);
+        return this.db.executeBatch([stmt1, stmt2], true).then((c) => (c > 0 ? true : false));
       }
     }
   }
@@ -572,21 +594,21 @@ export class SqlRepository<ID, T extends User> {
     if (this.conf.registered === this.conf.codeSent) {
       return Promise.resolve(true);
     } else {
-      const version = (this.track && this.track.version && this.track.version.length > 0 ? this.track.version : undefined);
-      const ver = (version && version.length > 0 ? 2 : undefined);
+      const version = this.track && this.track.version && this.track.version.length > 0 ? this.track.version : undefined;
+      const ver = version && version.length > 0 ? 2 : undefined;
       const stmt = buildStatusUpdate(this.user, this.db.param, this.id, id, this.status, this.conf.registered, this.conf.codeSent, version, ver);
-      return this.db.execute(stmt.query, stmt.params).then(c => c > 0 ? true : false);
+      return this.db.execute(stmt.query, stmt.params).then((c) => (c > 0 ? true : false));
     }
   }
   activate(id: ID, password?: string): Promise<boolean> {
-    const version = (this.track && this.track.version && this.track.version.length > 0 ? this.track.version : undefined);
-    const ver = (version && version.length > 0 ? (this.conf.registered === this.conf.codeSent ? 2 : 3) : undefined);
+    const version = this.track && this.track.version && this.track.version.length > 0 ? this.track.version : undefined;
+    const ver = version && version.length > 0 ? (this.conf.registered === this.conf.codeSent ? 2 : 3) : undefined;
     if (!password || password.length === 0) {
       const stmt = buildStatusUpdate(this.user, this.db.param, this.id, id, this.status, this.conf.codeSent, this.conf.activated, version, ver);
-      return this.db.execute(stmt.query, stmt.params).then(c => c > 0 ? true : false );
+      return this.db.execute(stmt.query, stmt.params).then((c) => (c > 0 ? true : false));
     } else {
       const p: any = {
-        [this.password]: password
+        [this.password]: password,
       };
       if (this.user === this.authen) {
         p[this.status] = this.conf.activated;
@@ -604,7 +626,7 @@ export class SqlRepository<ID, T extends User> {
         }
         params.push(id);
         params.push(this.conf.codeSent);
-        return this.db.execute(query, params).then(c => c > 0 ? true : false);
+        return this.db.execute(query, params).then((c) => (c > 0 ? true : false));
       } else {
         p[this.id] = id;
         let p2 = p;
@@ -613,7 +635,7 @@ export class SqlRepository<ID, T extends User> {
         }
         const stmt1 = buildStatement(p2, this.authen, this.db.param);
         const stmt2 = buildStatusUpdate(this.user, this.db.param, this.id, id, this.status, this.conf.codeSent, this.conf.activated, version, ver);
-        return this.db.executeBatch([stmt1, stmt2], true).then(c => c > 0 ? true : false);
+        return this.db.executeBatch([stmt1, stmt2], true).then((c) => (c > 0 ? true : false));
       }
     }
   }
@@ -631,8 +653,8 @@ export function buildUpdate<T>(obj: T, buildParam: (i: number) => string): State
       params.push(v);
     }
   }
-  const query = cols.join(',');
-  return { query, params};
+  const query = cols.join(",");
+  return { query, params };
 }
 export function buildStatement<T>(obj: T, table: string, buildParam: (i: number) => string): Statement {
   const keys = Object.keys(obj as any);
@@ -649,13 +671,13 @@ export function buildStatement<T>(obj: T, table: string, buildParam: (i: number)
       params.push(v);
     }
   }
-  const query = `insert into ${table}(${cols.join(',')})values(${values.join(',')})`;
-  return { query, params};
+  const query = `insert into ${table}(${cols.join(",")})values(${values.join(",")})`;
+  return { query, params };
 }
 export function buildStatusUpdate<ID>(table: string, buildParam: (i: number) => string, idname: string, id: ID, status: string, from: string, to: string, version?: string, ver?: number): Statement {
-  const sv = (version && ver !== undefined && ver > 0 ? `, version = ${ver} ` : '');
+  const sv = version && ver !== undefined && ver > 0 ? `, version = ${ver} ` : "";
   const query = `update ${table} set status = ${buildParam(1)} ${sv} where ${idname} = ${buildParam(2)} and ${status} = ${buildParam(3)}`;
-  return {query, params: [to, id, from]};
+  return { query, params: [to, id, from] };
 }
 export const SqlSignupRepository = SqlRepository;
 export const SignupRepository = SqlRepository;
