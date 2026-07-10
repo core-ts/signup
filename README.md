@@ -97,10 +97,7 @@ Activate Account
 # Quick Example
 
 ```typescript
-import {
-    SignupService,
-    Validator
-} from "signup-service";
+import { SignupService, Validator } from "signup-service";
 
 const validator = new Validator();
 
@@ -130,10 +127,7 @@ await signup.signup({
 Verify the account:
 
 ```typescript
-await signup.verify(
-    userId,
-    verificationCode
-);
+await signup.verify(userId, verificationCode);
 ```
 
 ---
@@ -244,11 +238,7 @@ Compatible with:
 The library is mail-provider agnostic.
 
 ```typescript
-send(
-    to,
-    passcode,
-    expireAt
-)
+send(to, passcode, expireAt)
 ```
 
 Can be integrated with:
