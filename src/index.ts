@@ -22,8 +22,8 @@ export class resources {
         return resources.phone.test(phoneNumber);
       } else {
         if (resources.phone.test(phoneNumber)) {
-          for (let degit = 1; degit <= 3; degit++) {
-            const countryCode = phoneNumber.substr(0, degit);
+          for (let digit = 1; digit <= 3; digit++) {
+            const countryCode = phoneNumber.substring(0, digit);
             if (countryCode in resources.phonecodes) {
               return true;
             }
@@ -240,16 +240,19 @@ export class SignupService<ID, T extends User> {
       }
     }
     const hashPassword = await this.comparator.hash(info.password);
-    info.password = hashPassword;
+    const user = {
+      ...info,
+      password: hashPassword,
+    };
 
     const userId = this.generateId();
-    const ok = await this.repository.save(userId, info);
+    const ok = await this.repository.save(userId, user);
 
     if (!ok) {
       return this.status.error;
     }
 
-    const res = await this.createConfirmCode(userId, info);
+    const res = await this.createConfirmCode(userId, user);
     return res ? this.status.success : this.status.error;
   }
 
@@ -366,23 +369,23 @@ export function isUsername(u: string | null | undefined): boolean {
   const v = u + "@gmail.com";
   return isEmail(v);
 }
-export function isPassword(password: string, minLength = 8): boolean {
+export function isPassword(password: string): boolean {
   const regex = new RegExp(resources.password);
 
   return regex.test(password);
 }
 // tslint:disable-next-line:max-classes-per-file
 export class Validator<T extends User> {
-  min: number;
-  passwordRequired: boolean;
-  checkContact: (u: string | null | undefined) => boolean;
-  checkUsername: (u: string | null | undefined) => boolean;
+  protected min: number;
+  protected passwordRequired: boolean;
+  protected checkContact: (u: string | null | undefined) => boolean;
+  protected checkUsername: (u: string | null | undefined) => boolean;
   constructor(
     checkUsername?: (u: string | null | undefined) => boolean,
     checkContact?: (u: string | null | undefined) => boolean,
     passwordRequired?: boolean,
     min?: number,
-    public max?: number,
+    protected max?: number,
   ) {
     this.min = min !== undefined && min != null ? min : 6;
     this.passwordRequired = passwordRequired !== undefined && passwordRequired != null ? passwordRequired : true;

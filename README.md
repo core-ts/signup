@@ -100,7 +100,7 @@ Activate Account
 import {
     SignupService,
     Validator
-} from "signup-core";
+} from "signup-service";
 
 const validator = new Validator();
 
@@ -373,9 +373,9 @@ The library follows several design principles:
 
 ---
 
-# Why signup-core?
+# Why signup-service?
 
-Unlike authentication frameworks that require a specific stack, `signup-core` focuses only on the signup and account verification workflow.
+Unlike authentication frameworks that require a specific stack, `signup-service` focuses only on the signup and account verification workflow.
 
 You choose:
 
