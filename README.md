@@ -30,7 +30,13 @@ Instead of forcing you to use a particular stack, the library allows you to plug
 # Installation
 
 ```bash
-npm install signup-core
+npm install signup-service
+```
+
+or
+
+```bash
+yarn add signup-service
 ```
 
 ---
