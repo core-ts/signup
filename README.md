@@ -6,60 +6,48 @@ A flexible, framework-agnostic TypeScript library for implementing user registra
 
 Instead of forcing you to use a particular stack, the library allows you to plug in your own repository, password hasher, email sender, and verification code storage.
 
----
 
-## Features
 
-* ✔ Complete signup workflow
-* ✔ Email or phone verification
-* ✔ Account activation
-* ✔ Password hashing abstraction
-* ✔ Verification code hashing
-* ✔ Configurable validators
-* ✔ Generic repository interfaces
-* ✔ SQL repository implementation included
-* ✔ Database-independent design
-* ✔ Framework-independent
-* ✔ Configurable field mapping
-* ✔ Audit fields support
-* ✔ Password expiration support
-* ✔ TypeScript-first
-
----
-
-# Installation
-
-```bash
-npm install signup-service
-```
-
-or
-
-```bash
-yarn add signup-service
-```
-
----
-
-# Architecture
+# Main Workflow
 
 ```
-                SignupService
-                      │
-        ┌─────────────┼─────────────┐
-        │             │             │
- Repository      Comparator     Mail Sender
-        │
- Passcode Repository
-        │
- Verification Code Storage
+Sign up
+ │
+ ▼
+Verify email/phone
+ │
+ ▼
+Activate account
 ```
 
-Everything is injected through interfaces, allowing you to integrate with any backend technology.
+### Step 1: sign up
+```
+sign up
+   │
+   ├── check username
+   ├── check contact
+   ├── hash password
+   ├── save user
+   ├── create passcode
+   ├── send email
+   └── mark "code sent"
+```
 
----
+### Step 2: verify email/phone and activate account
 
-# Signup Workflow
+```
+verify email/phone (by sent-code)
+
+   │
+   ▼
+check passcode
+
+   │
+   ▼
+activate account
+```
+
+# Signup Detailed Workflow
 
 ```
 User
@@ -96,6 +84,79 @@ User Verifies Code
  │
  ▼
 Activate Account
+```
+
+---
+
+# Architecture
+```
+Validator
+
+SignupService
+│
+├── Repository
+├── PasscodeRepository
+├── Password Comparator
+├── Passcode Comparator
+├── Mail Sender
+└── ID Generator
+
+SQL Repository
+
+Mail Sender
+
+Utilities
+```
+
+Everything depends on interfaces.
+
+That's a very strong design.
+
+```
+                SignupService
+                      │
+        ┌─────────────┼─────────────┐
+        │             │             │
+ Repository      Comparator     Mail Sender
+        │
+ Passcode Repository
+        │
+ Verification Code Storage
+```
+
+Everything is injected through interfaces, allowing you to integrate with any backend technology.
+
+---
+
+## Features
+
+* ✔ Complete signup workflow
+* ✔ Email or phone verification
+* ✔ Account activation
+* ✔ Password hashing abstraction
+* ✔ Verification code hashing
+* ✔ Configurable validators
+* ✔ Generic repository interfaces
+* ✔ SQL repository implementation included
+* ✔ Database-independent design
+* ✔ Framework-independent
+* ✔ Configurable field mapping
+* ✔ Audit fields support
+* ✔ Password expiration support
+* ✔ TypeScript-first
+
+---
+
+# Installation
+
+```bash
+npm install signup-service
+```
+
+or
+
+```bash
+yarn add signup-service
 ```
 
 ---
@@ -274,9 +335,48 @@ Features:
 * audit fields
 * optimistic version support
 
----
+## Nice Design Choices
+### Field mapping
+```typescript
+map
+```
 
-# Configurable Field Mapping
+lets users map
+```text
+username
+
+   ↓
+
+user_name
+```
+without modifying the code.
+
+Very useful.
+
+### Tracking
+```text
+createdAt
+updatedAt
+createdBy
+updatedBy
+```
+is optional.
+
+Good.
+
+### Version field
+Supports optimistic locking style versioning.
+
+Nice feature.
+
+### Password expiry
+Supports
+```text
+maxPasswordAge
+```
+Not common in npm libraries.
+
+## Configurable Field Mapping
 
 Existing database schema?
 
@@ -291,6 +391,40 @@ No problem.
 ```
 
 No schema migration required.
+
+
+## Audit Fields
+
+The SQL repository can automatically populate
+
+* createdAt
+* createdBy
+* updatedAt
+* updatedBy
+* version
+
+This makes it suitable for enterprise applications.
+
+---
+
+## Password Storage
+
+Passwords are never stored in plaintext.
+
+The library hashes passwords before persistence using the injected comparator.
+
+---
+
+## Verification Codes
+
+Verification codes are:
+
+* randomly generated
+* hashed before storage
+* compared securely
+* expiration-aware
+
+The application decides where they are stored.
 
 ---
 
@@ -359,13 +493,17 @@ The library follows several design principles:
 
 # Typical Use Cases
 
-* SaaS applications
+* SaaS platforms
 * Enterprise systems
+* Banking platforms
+* Insurance platforms
+* Government systems
+* Healthcare systems
 * Internal business applications
-* REST APIs
-* GraphQL APIs
 * Microservices
 * Serverless applications
+* REST APIs
+* GraphQL APIs
 
 ---
 
