@@ -480,14 +480,8 @@ export function useRepository<ID, T extends User>(db: DB, user: string, authen: 
     return new SqlRepository(db, user, authen, conf, undefined, undefined, undefined, undefined, undefined, maxPasswordAge, undefined, track, mp);
   }
 }
-export const useService = useRepository;
-export const useSignupService = useRepository;
-export const useSignupRepository = useRepository;
-export const useSignup = useRepository;
+
 export const useUserRepository = useRepository;
-export const useUserRegistrationService = useRepository;
-export const useUserRegistrationRepository = useRepository;
-export const useUserRegistration = useRepository;
 // tslint:disable-next-line:max-classes-per-file
 export class SqlRepository<ID, T extends User> {
   constructor(
@@ -682,11 +676,6 @@ export function buildStatusUpdate<ID>(table: string, buildParam: (i: number) => 
   const query = `update ${table} set status = ${buildParam(1)} ${sv} where ${idname} = ${buildParam(2)} and ${status} = ${buildParam(3)}`;
   return { query, params: [to, id, from] };
 }
-export const SqlSignupRepository = SqlRepository;
-export const SignupRepository = SqlRepository;
-export const SqlSignupService = SqlRepository;
-export const UserRegistrationRepository = SqlRepository;
-export const SqlUserRegistrationRepository = SqlRepository;
 export const UserRepository = SqlRepository;
 export const SqlUserRepository = SqlRepository;
 export function clone<T>(obj: T): T {

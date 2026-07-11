@@ -1,6 +1,6 @@
 {
   "name": "signup-service",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "signup",
   "main": "./lib/index.js",
   "types": "./src/index.ts",
@@ -20,6 +20,10 @@
     "url": "git@github.com/core-ts/signup"
   },
   "keywords": [
-    "signup"
+    "signup",
+    "sign up",
+    "user sign up",
+    "user registration",
+    "register user"
   ]
 }
